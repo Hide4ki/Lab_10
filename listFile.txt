@@ -1,0 +1,3 @@
+Goodhack
+skk
+input.txt
