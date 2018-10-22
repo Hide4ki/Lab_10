@@ -8,8 +8,7 @@
 
 int main(void)
 {
-	FILE *pLFh
-		;
+	FILE *pLF;
 	FILE *fin;
 	FILE *graphs;
 	char tstruct[] = "struct";
