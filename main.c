@@ -4,25 +4,38 @@
 #define MAX_F_N 31
 #define MAX_I_N 25
 #define MAX_T_N 22
+#define DLEN 100
 #define LEN 1000 
+
+int strcmp(char *s1, char *s2)
+{
+	for(;*s1 == *s2; s1++, s2++)
+		if(*s1 == '\0')
+			return 0;
+	return s1-s2;
+}
 
 int main(void)
 {
 	FILE *pLF;
 	FILE *fin;
 	FILE *graphs;
-	char tstruct[] = "struct";
-	char *pstruct;
+	const char tstruct[] = "struct";
+	const char *pstruct;
 	char fstruct;
-	char tstatic[] = "static";
-	char *pstatic;
+	const char tstatic[] = "static";
+	const char *pstatic;
 	char fstatic;
-	char tunsign[] = "unsigned";
-	char *punsign;
+	const char tunsign[] = "unsigned";
+	const char *punsign;
 	char funsign;
-	char fname[MAX_F_N];
-	char iname[MAX_I_N];
-	char tname[MAX_T_N];
+	char searchName[MAX_I_N];
+	struct Trecord
+	{
+		char fname[MAX_F_N];
+		char iname[MAX_I_N];
+		char tname[MAX_T_N];
+	}*record;
 	char *piname;
 	char *ptname;
 	int com;
@@ -31,22 +44,22 @@ int main(void)
 	int ft;
 	char line[LEN+1];
 	char *l;
+	int i;
 	int funf;
-
+	int iterator;
+	iterator = 0;
+	record = (struct Trecord*)calloc(DLEN,sizeof(struct Trecord));
 	if(!(pLF = fopen("listFile.txt","r"))) return 1;
-	if(!(graphs = fopen("graphs.dot","w"))) return 1;
 
 	printf("%-*s %-*s %-s\n",MAX_T_N,"type variable",MAX_I_N,"name variable","file of which variable");
-	fprintf(graphs,"digraph A");
-	fprintf(graphs,"\n{\n");
-
-	while(fgets(fname,sizeof(fname),pLF))
+	
+	while(fgets((record+iterator)->fname,sizeof((record+iterator)->fname),pLF))
 	{
-		sscanf(fname,"%[^\n]",fname);
-		if(fin = fopen(fname,"r")) 
+		sscanf((record+iterator)->fname,"%[^\n]",(record+iterator)->fname);
+		if(fin = fopen((record+iterator)->fname,"r")) 
 		{
-			piname = iname;
-			ptname = tname;
+			piname = (record+iterator)->iname;
+			ptname = (record+iterator)->tname;
 			pstruct = tstruct; 
 			pstatic = tstatic; 
 			punsign = tunsign; 
@@ -82,14 +95,17 @@ int main(void)
 					case ',':
 						if(!cntf)
 						{
-							if( piname != iname && ptname != tname && !funf)
+							if( piname != (record+iterator)->iname && ptname != (record+iterator)->tname && !funf)
 							{
 								*piname = '\0';
 								*ptname = '\0';
-								fprintf(graphs,"\t\"%s\"->\"%s\";\n",iname,fname);
-								printf("%-*s %-*s %-s\n",MAX_T_N,tname,MAX_I_N,iname,fname);
+								printf("%-*s %-*s %-s\n",MAX_T_N,(record+iterator)->tname,MAX_I_N,(record+iterator)->iname,(record+iterator)->fname);
 							}
-							piname = iname;
+							iterator++;
+							if(DLEN - iterator%DLEN==DLEN)
+								record = (struct Trecord*)realloc(record,iterator+DLEN);
+							*(record+iterator) = *(record+iterator-1);
+							piname = (record+iterator)->iname;
 						}
 						break;
 
@@ -99,7 +115,7 @@ int main(void)
 						break;
 
 					case '[':
-						if(!cntf && ptname-tname<MAX_T_N)
+						if(!cntf && ptname-(record+iterator)->tname<MAX_T_N)
 						{
 							*ptname++ = ' ';
 							*ptname++ = '[';
@@ -111,7 +127,7 @@ int main(void)
 						break;
 
 					case '*':
-						if(!cntf && ptname-tname<MAX_T_N)
+						if(!cntf &&	ptname-(record+iterator)->tname<MAX_T_N)
 							*ptname++ = '*';
 						break;
 
@@ -130,16 +146,19 @@ int main(void)
 					case ';':
 						if(!cntf)
 						{
-							if( piname != iname && ptname != tname && !funf)
+							if( piname != (record+iterator)->iname && ptname != (record+iterator)->tname && !funf)
 							{
 								*piname = '\0';
 								*ptname = '\0';
-								fprintf(graphs,"\t\"%s\"->\"%s\";\n",iname,fname);
-								printf("%-*s %-*s %-s\n",MAX_T_N,tname,MAX_I_N,iname,fname);
+								printf("%-*s %-*s %-s\n",MAX_T_N,(record+iterator)->tname,MAX_I_N,(record+iterator)->iname,(record+iterator)->fname);
 							}
 							funf = 0;
-							piname = iname;
-							ptname = tname;
+							iterator++;
+							if(DLEN - iterator%DLEN==DLEN)
+								record = (struct Trecord*)realloc(record,iterator+DLEN);
+							*(record+iterator) = *(record+iterator-1); 
+							piname = (record+iterator)->iname;
+							ptname = (record+iterator)->tname;
 							pstruct = tstruct; 
 							pstatic = tstatic; 
 							punsign = tunsign; 
@@ -156,7 +175,7 @@ int main(void)
 						{
 							if(*l == ' ' || *l == '\t' || *l == '\n' )
 							{
-								if(!funsign && !fstruct && !fstatic && ptname != tname)
+								if(!funsign && !fstruct && !fstatic && ptname != (record+iterator)->tname)
 								{
 									ft = 0;
 									fi = 1;
@@ -185,9 +204,9 @@ int main(void)
 									funsign = 0;
 								if(*pstatic!=0 && *l!=*pstatic++)
 									fstatic = 0;
-								if(ft && ptname-tname<MAX_T_N)
+								if(ft && ptname-(record+iterator)->tname<MAX_T_N)
 									*ptname++ = *l;
-								if(fi && piname-iname<MAX_I_N)
+								if(fi && piname-(record+iterator)->iname<MAX_I_N)
 									*piname++ = *l;
 							}
 						}
@@ -199,12 +218,22 @@ int main(void)
 			fclose(fin);
 		}
 		else
-			printf("%-*s %-*s %-s\n",MAX_T_N,"Error",MAX_I_N,"file cannot be opened",fname);
+			printf("%-*s %-*s %-s\n",MAX_T_N,"Error",MAX_I_N,"file cannot be opened",(record+iterator)->fname);
 	}
-
-	fprintf(graphs,"}\n");
-
 	fclose(pLF);
+	
+	if(!(graphs = fopen("graphs.dot","w"))) 
+		return 1;
+	printf("Enter indificator, for bilding graph:");
+	scanf("%s",searchName);
+	fprintf(graphs,"digraph A");
+	fprintf(graphs,"\n{\n");
+	for(i = 0;i<iterator;i++)
+		if(strcmp(searchName,(record+i)->iname)==0)
+			fprintf(graphs,"\t\"%s\"->\"%s\";\n",(record+i)->iname,(record+i)->fname);
+	fprintf(graphs,"}\n");
+	fprintf(graphs,"\t\"%s\"->\"%s\";\n",(record+iterator)->iname,(record+iterator)->fname);
+	
 	fclose(graphs);
 
 	system("graphviz-2.38\\bin\\dot -Tpng graphs.dot -o graphs.png");
