@@ -1,3 +1,14 @@
-Goodhack
-skk
+goodhack
+check.h
+table.h
+string.h
+rbtree.h
+analysis.h
+rbt.c
+check.c
+analysis.c
+string.c
+table.c
+init.c
+main.c
 input.txt
